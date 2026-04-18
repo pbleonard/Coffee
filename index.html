@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>The Brew Log</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Raleway:wght@300;400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>window.BREW_CONFIG=window.BREW_CONFIG||{anthropicKey:"",supabaseUrl:"",supabaseKey:""};</script>
+<script src="config.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#F0E2C8;--s1:#E8D5B0;--s2:#DEC99A;--bone:#F5ECD7;
+  --border:#C4A882;--border2:#B09060;
+  --text:#2A1505;--muted:#8B6040;--dim:#B08060;
+  --terra:#A0522D;--rust:#7B3B1A;--copper:#C4956A;
+  --horizon:#B5764A;--shadow:#3D2010;
+  --sage:#7A9E7E;--sage-dark:#4A6B4E;--gbg:#E8F0E8;
+  --ice:#EAF0FF;--ice-text:#2A4A8B;--ice-border:#7A9ADD;
+  --red:#8B2A0A;--rbg:#F5E8E0;--r:8px;
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Raleway',sans-serif;font-size:15px}
+body{display:flex;flex-direction:column;max-width:500px;margin:0 auto}
+.tabs{display:flex;border-bottom:2px solid var(--border2);flex-shrink:0;background:var(--s1)}
+.tab{flex:1;padding:0.58rem 0;font-family:'Raleway',sans-serif;font-size:0.68rem;font-weight:700;letter-spacing:0.09em;text-transform:uppercase;text-align:center;cursor:pointer;background:none;border:none;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-2px;transition:all 0.2s}
+.tab.active{color:var(--rust);border-bottom-color:var(--rust)}
+.scroll{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:1rem 1rem 5rem}
+.scroll::-webkit-scrollbar{width:4px}
+.scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.panel{display:none}.panel.active{display:block}
+.slabel{font-size:0.6rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--horizon);margin:1rem 0 0.5rem;display:flex;align-items:center;gap:0.4rem}
+.slabel:first-child{margin-top:0}
+.slabel::before{content:'';width:14px;height:2px;background:var(--horizon);border-radius:1px;flex-shrink:0}
+.slabel::after{content:'';flex:1;height:1px;background:var(--border)}
+.cam-row{display:flex;gap:0.5rem;margin-bottom:0.7rem}
+.cam-btn{flex:1;background:var(--s1);border:1.5px solid var(--border2);border-radius:var(--r);padding:0.7rem 0.5rem;text-align:center;cursor:pointer;transition:all 0.2s}
+.cam-btn:active{border-color:var(--terra);background:var(--s2)}
+.cam-btn .ci{font-size:1.4rem;display:block;margin-bottom:0.22rem}
+.cam-btn strong{color:var(--terra);font-size:0.75rem;display:block;font-weight:700}
+.cam-btn p{color:var(--muted);font-size:0.62rem;margin-top:1px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:0.5rem}
+.fg{display:flex;flex-direction:column;gap:0.22rem}
+.fg.full{grid-column:1/-1}
+label{font-size:0.58rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted)}
+input,select,textarea{background:var(--bone);border:1.5px solid var(--border);border-radius:var(--r);padding:0.48rem 0.65rem;font-size:0.85rem;font-family:'Raleway',sans-serif;color:var(--text);width:100%;transition:border-color 0.2s;-webkit-appearance:none;appearance:none}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--terra)}
+input::placeholder{color:var(--dim)}
+select option{background:var(--bone);color:var(--text)}
+.world-row{display:flex;gap:0.55rem;margin-top:0.28rem;align-items:center}
+.wopt{display:flex;align-items:center;gap:0.28rem;font-size:0.68rem;color:var(--muted);cursor:pointer;user-select:none}
+.wopt.active{color:var(--rust);font-weight:700}
+.wdot{width:12px;height:12px;border-radius:50%;border:1.5px solid var(--border2);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s}
+.wdot.filled{border-color:var(--terra);background:var(--terra)}
+.wdot.filled::after{content:'';width:4px;height:4px;border-radius:50%;background:var(--bone)}
+.roast-age{margin-top:0.35rem;background:var(--bone);border:1.5px solid var(--border);border-radius:var(--r);padding:0.5rem 0.7rem;display:flex;align-items:center;gap:0.6rem}
+.roast-age-num{font-family:'Abril Fatface',serif;font-size:1.15rem;color:var(--terra);line-height:1;flex-shrink:0}
+.roast-age-lbl{font-size:0.56rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-top:2px}
+.roast-bar-wrap{flex:1}
+.roast-bar-header{display:flex;justify-content:space-between;margin-bottom:3px}
+.roast-bar-header span{font-size:0.55rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.05em}
+.roast-bar-bg{height:5px;background:var(--s2);border-radius:3px;overflow:hidden}
+.roast-bar-fill{height:100%;border-radius:3px;transition:width 0.4s,background 0.4s}
+.roast-bar-ticks{display:flex;justify-content:space-between;margin-top:3px}
+.roast-bar-ticks span{font-size:0.5rem;color:var(--dim)}
+.freeze-toggle{display:flex;align-items:center;gap:0.5rem;margin-top:0.35rem;cursor:pointer;user-select:none}
+.freeze-check{width:16px;height:16px;border:1.5px solid var(--border2);border-radius:4px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s;background:var(--bone)}
+.freeze-check.on{background:var(--terra);border-color:var(--terra)}
+.freeze-check.on::after{content:'✓';font-size:0.65rem;color:var(--bone);font-weight:700}
+.freeze-lbl{font-size:0.7rem;color:var(--muted);font-weight:600}
+.freeze-lbl.on{color:var(--rust)}
+.freeze-dates{display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-top:0.4rem}
+.freeze-note{font-size:0.65rem;color:var(--sage-dark);background:var(--gbg);border:1px solid var(--sage);border-radius:6px;padding:0.35rem 0.6rem;margin-top:0.35rem;line-height:1.4}
+.price-row{display:flex;gap:0.35rem;align-items:center}
+.price-amt{flex:1;background:var(--bone);border:1.5px solid var(--border);border-radius:var(--r);padding:0.48rem 0.65rem;font-size:0.85rem;color:var(--text);font-family:'Raleway',sans-serif}
+.price-sep{font-size:0.65rem;color:var(--muted);flex-shrink:0}
+.price-qty{width:42px;background:var(--bone);border:1.5px solid var(--border);border-radius:var(--r);padding:0.48rem 0.4rem;font-size:0.85rem;color:var(--text);text-align:center;font-family:'Raleway',sans-serif}
+.unit-sel{width:58px;flex-shrink:0}
+.cost-pills{display:flex;gap:0.4rem;margin-top:0.32rem}
+.cpill{flex:1;background:rgba(160,82,45,0.1);border:1px solid var(--border);border-radius:20px;padding:0.22rem 0.5rem;font-size:0.65rem;color:var(--rust);font-weight:700;text-align:center}
+.tgroup{display:flex;gap:0.38rem;flex-wrap:wrap}
+.tbtn{padding:0.36rem 0.85rem;font-family:'Raleway',sans-serif;font-size:0.72rem;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;border-radius:20px;border:1.5px solid var(--border2);background:transparent;cursor:pointer;color:var(--muted);transition:all 0.2s;white-space:nowrap}
+.tbtn.active{background:var(--terra);color:var(--bone);border-color:var(--terra)}
+.btn{padding:0.62rem 1.2rem;border-radius:var(--r);font-family:'Raleway',sans-serif;font-size:0.8rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;transition:all 0.15s;border:1.5px solid transparent;width:100%}
+.btn-primary{background:var(--terra);color:var(--bone);border-color:var(--terra)}
+.btn-primary:active{background:var(--rust)}
+.btn-ghost{background:transparent;color:var(--muted);border-color:var(--border2)}
+.btn-ghost:active{border-color:var(--terra);color:var(--terra)}
+.btn:disabled{opacity:0.4;cursor:not-allowed}
+.brow{display:flex;gap:0.5rem;margin-top:0.65rem}
+.brow .btn{margin:0}
+.alert{padding:0.6rem 0.85rem;border-radius:var(--r);font-size:0.8rem;margin:0.5rem 0;line-height:1.4;font-weight:600}
+.ok{background:var(--gbg);color:var(--sage-dark);border:1.5px solid var(--sage)}
+.err{background:var(--rbg);color:var(--red);border:1.5px solid #C47060}
+.loading{display:flex;align-items:center;gap:0.5rem;color:var(--muted);font-size:0.82rem;padding:0.75rem 0}
+.spin{width:14px;height:14px;border:2px solid var(--border2);border-top-color:var(--terra);border-radius:50%;animation:sp 0.7s linear infinite;flex-shrink:0}
+@keyframes sp{to{transform:rotate(360deg)}}
+.rbox{background:var(--bone);border:1.5px solid var(--border2);border-radius:var(--r);padding:1rem;margin-top:0.75rem;font-size:0.84rem;line-height:1.7;border-left:4px solid var(--terra)}
+.rbox h3{font-family:'Abril Fatface',serif;font-size:1.05rem;color:var(--rust);margin-bottom:0.5rem}
+.rbox strong{color:var(--terra)}
+.rbox-section{font-size:0.58rem;font-weight:700;text-transform:uppercase;letter-spacing:0.09em;color:var(--muted);margin:0.7rem 0 0.2rem;display:block}
+
+/* V60 STOPWATCH */
+.stopwatch{background:var(--s1);border:1.5px solid var(--border2);border-radius:var(--r);padding:0.9rem 1rem;margin-top:0.75rem;text-align:center}
+.sw-display{font-family:'Abril Fatface',serif;font-size:2.4rem;color:var(--rust);letter-spacing:0.05em;line-height:1;margin-bottom:0.6rem}
+.sw-btns{display:flex;gap:0.5rem;justify-content:center;margin-bottom:0.75rem}
+.sw-btn{padding:0.5rem 1.4rem;border-radius:20px;font-family:'Raleway',sans-serif;font-size:0.8rem;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;cursor:pointer;border:1.5px solid var(--border2);background:transparent;color:var(--muted);transition:all 0.2s}
+.sw-btn.start{background:var(--terra);color:var(--bone);border-color:var(--terra)}
+.sw-btn.stop{background:var(--rust);color:var(--bone);border-color:var(--rust)}
+.sw-btn.reset{color:var(--muted)}
+.sw-pours{display:flex;flex-direction:column;gap:0.2rem}
+.sw-pour-row{display:flex;gap:0.5rem;padding:0.28rem 0.5rem;border-radius:6px;font-size:0.75rem;transition:background 0.3s,color 0.3s;align-items:center}
+.sw-pour-row.active{background:var(--terra);color:var(--bone)}
+.sw-pour-row.done{opacity:0.45}
+.sw-pour-time{font-weight:700;min-width:38px;flex-shrink:0;font-family:'Raleway',sans-serif}
+.sw-pour-desc{flex:1;text-align:left}
+
+/* CARDS */
+.card{background:var(--bone);border:1.5px solid var(--border);border-radius:var(--r);padding:0.88rem;margin-bottom:0.55rem;border-left:3px solid var(--copper)}
+.card h3{font-size:0.95rem;color:var(--shadow);margin-bottom:0.15rem;font-weight:700;cursor:pointer;display:inline-block}
+.card h3:hover{color:var(--terra)}
+.card .meta{font-size:0.72rem;color:var(--muted);margin-bottom:0.28rem;line-height:1.4}
+.card .flavor{font-size:0.74rem;color:var(--terra);font-style:italic;margin-bottom:0.45rem}
+.card-detail{display:none;margin-top:0.6rem;border-top:1px solid var(--border);padding-top:0.6rem}
+.card-detail.open{display:block}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.3rem 0.6rem;margin-bottom:0.5rem}
+.detail-row{display:flex;flex-direction:column;gap:0.1rem}
+.detail-lbl{font-size:0.55rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted)}
+.detail-val{font-size:0.78rem;color:var(--text)}
+.detail-row.full{grid-column:1/-1}
+.cacts{display:flex;gap:0.4rem;flex-wrap:wrap;margin-top:0.55rem}
+.cbtn{padding:0.28rem 0.72rem;font-family:'Raleway',sans-serif;font-size:0.68rem;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;border-radius:6px;border:1.5px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;transition:all 0.2s}
+.cbtn:active{border-color:var(--terra);color:var(--terra)}
+.cbtn.primary{background:var(--terra);color:var(--bone);border-color:var(--terra)}
+.world-badge{display:inline-block;font-family:'Raleway',sans-serif;font-size:0.6rem;font-weight:700;letter-spacing:0.06em;padding:0.14rem 0.55rem;border-radius:20px}
+.old-w{background:#FFF0D8;color:#8B5010;border:1px solid #D4A050}
+.new-w{background:var(--gbg);color:var(--sage-dark);border:1px solid var(--sage)}
+.dialed-badge{display:inline-block;font-family:'Raleway',sans-serif;font-size:0.6rem;font-weight:700;letter-spacing:0.06em;padding:0.14rem 0.55rem;border-radius:20px;background:var(--gbg);color:var(--sage-dark);border:1px solid var(--sage)}
+.frozen-badge{display:inline-block;font-family:'Raleway',sans-serif;font-size:0.6rem;font-weight:700;letter-spacing:0.06em;padding:0.14rem 0.55rem;border-radius:20px;background:var(--ice);color:var(--ice-text);border:1px solid var(--ice-border);margin-left:0.3rem}
+.expand-hint{font-size:0.6rem;color:var(--muted);margin-left:0.4rem;font-weight:400;font-style:italic}
+hr{border:none;border-top:1px solid var(--border);margin:0.9rem 0}
+.empty{text-align:center;padding:2.5rem 1rem;color:var(--muted)}
+.empty h3{font-family:'Abril Fatface',serif;font-size:1rem;color:var(--terra);margin-bottom:0.3rem}
+.empty p{font-size:0.8rem;line-height:1.5}
+.overlay{display:none;position:fixed;inset:0;background:var(--bg);z-index:100;overflow-y:auto;max-width:500px;margin:0 auto}
+.ov-inner{padding:1.2rem 1rem 3rem}
+.ov-inner h2{font-family:'Abril Fatface',serif;color:var(--rust);font-size:1.3rem;margin-bottom:0.4rem}
+.ov-inner p{font-size:0.82rem;color:var(--muted);line-height:1.6;margin-bottom:0.7rem}
+.ov-inner a{color:var(--terra);font-weight:600}
+.setup-box{background:var(--bone);border:1.5px solid var(--border);border-radius:var(--r);padding:1rem;margin-bottom:0.75rem;border-left:3px solid var(--copper)}
+.setup-box h3{font-size:0.7rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--terra);margin-bottom:0.6rem}
+.step{display:flex;align-items:flex-start;gap:0.5rem;margin-bottom:0.55rem;font-size:0.8rem;color:var(--muted);line-height:1.5}
+.step-n{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--terra);color:var(--bone);font-size:0.68rem;font-weight:700;flex-shrink:0;margin-top:1px}
+.irow{display:flex;gap:0.5rem;align-items:center;margin-bottom:0.5rem}
+.irow input{flex:1;margin:0}
+.irow .btn{width:auto;padding:0.5rem 0.9rem;flex-shrink:0}
+pre.sql{background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:0.75rem;font-size:0.68rem;color:var(--text);overflow-x:auto;line-height:1.5;white-space:pre-wrap;margin:0.6rem 0;font-family:monospace}
+details summary{font-size:0.75rem;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:var(--terra);cursor:pointer;font-family:'Raleway',sans-serif}
+.cfg-notice{background:var(--gbg);color:var(--sage-dark);border:1.5px solid var(--sage);border-radius:var(--r);padding:0.75rem 1rem;font-size:0.8rem;margin-bottom:0.75rem;line-height:1.5}
+</style>
+</head>
+<body>
+
+<!-- SETTINGS OVERLAY -->
+<div class="overlay" id="settingsOverlay">
+  <div class="ov-inner">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.1rem">
+      <h2>Setup</h2>
+      <button class="cbtn" onclick="closeSettings()">✕ Close</button>
+    </div>
+    <div id="cfgNotice" style="display:none" class="cfg-notice">✓ Keys loaded from <strong>config.js</strong> — no manual entry needed.</div>
+    <div class="setup-box">
+      <h3>1 — Anthropic API Key</h3>
+      <p>Powers label scanning and recipe generation. Get a key at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> → API Keys. Add $5 in credits to start.</p>
+      <div class="irow">
+        <input type="password" id="apiKeyIn" placeholder="sk-ant-... (or set in config.js)">
+        <button class="btn btn-primary" onclick="saveAnthropicKey()">Save</button>
+      </div>
+      <div id="kst1"></div>
+    </div>
+    <div class="setup-box">
+      <h3>2 — Supabase Cloud Storage</h3>
+      <p>Stores beans and recipes in the cloud so any device can access them. Free tier is plenty.</p>
+      <div class="step"><span class="step-n">1</span><span>Go to <a href="https://supabase.com" target="_blank">supabase.com</a> and create a new project.</span></div>
+      <div class="step"><span class="step-n">2</span><span><strong style="color:var(--text)">SQL Editor</strong> → paste and run the setup SQL below.</span></div>
+      <div class="step"><span class="step-n">3</span><span><strong style="color:var(--text)">Project Settings → API</strong> → copy URL and anon key into config.js.</span></div>
+      <details>
+        <summary>Show setup SQL ▾</summary>
+        <pre class="sql" id="sqlBlock">create table if not exists beans (
+  id uuid primary key default gen_random_uuid(),
+  name text not null unique,
+  origin text, region text, variety text,
+  process text, roaster text, roast_date text,
+  altitude text, flavor_notes text, price text,
+  world text, frozen boolean default false,
+  freeze_date text, thaw_date text,
+  created_at timestamptz default now()
+);
+create table if not exists recipes (
+  id uuid primary key default gen_random_uuid(),
+  bean_name text not null,
+  brewer text, grinder text,
+  recipe_text text,
+  created_at timestamptz default now(),
+  unique(bean_name, brewer, grinder)
+);
+alter table beans enable row level security;
+alter table recipes enable row level security;
+create policy "allow all" on beans for all using (true) with check (true);
+create policy "allow all" on recipes for all using (true) with check (true);</pre>
+        <button class="cbtn" onclick="copySql()">Copy SQL</button>
+      </details>
+      <div class="fg" style="margin:0.75rem 0 0.5rem"><label>Project URL</label><input type="text" id="sbUrl" placeholder="https://xxxx.supabase.co"></div>
+      <div class="fg" style="margin-bottom:0.55rem"><label>Anon / Public Key</label><input type="password" id="sbKey" placeholder="eyJ..."></div>
+      <button class="btn btn-primary" onclick="saveSupabase()">Save Supabase credentials</button>
+      <div id="kst2"></div>
+    </div>
+    <div id="allGood" style="display:none" class="alert ok">✓ All set — you're ready to brew.</div>
+    <button class="btn btn-ghost" style="margin-top:0.5rem" onclick="closeSettings()">Done</button>
+  </div>
+</div>
+
+<!-- HEADER -->
+<svg width="100%" viewBox="0 0 500 138" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;display:block;cursor:default" id="appHeader">
+  <defs>
+    <linearGradient id="hdrSky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#C8502A"/><stop offset="50%" stop-color="#E08438"/><stop offset="100%" stop-color="#C47530"/>
+    </linearGradient>
+  </defs>
+  <rect width="500" height="138" fill="url(#hdrSky)"/>
+  <ellipse cx="400" cy="22" rx="50" ry="32" fill="#F5C842" opacity="0.25"/>
+  <ellipse cx="400" cy="20" rx="22" ry="15" fill="#FAE070" opacity="0.52"/>
+  <polygon points="0,138 0,70 55,48 110,70 170,38 230,65 285,35 340,58 385,40 500,58 500,138" fill="#B05818" opacity="0.4"/>
+  <polygon points="0,138 0,82 65,62 125,78 190,55 260,72 315,52 385,68 430,55 500,62 500,138" fill="#8A3810" opacity="0.36"/>
+  <rect x="0" y="110" width="500" height="28" fill="#7B3515" opacity="0.55"/>
+  <rect x="0" y="118" width="500" height="20" fill="#622A0C" opacity="0.45"/>
+  <!-- Hawk 1 left -->
+  <path d="M155,32 Q163,26 171,29 Q179,26 187,32 Q179,37 171,34 Q163,37 155,32Z" fill="#1E0A02" opacity="0.72"/>
+  <ellipse cx="171" cy="29" rx="3" ry="2.4" fill="#1E0A02" opacity="0.72"/>
+  <path d="M169,32 Q171,37 173,32" stroke="#1E0A02" stroke-width="1.5" fill="none" opacity="0.6"/>
+  <!-- Hawk 2 right -->
+  <path d="M338,16 Q346,11 353,14 Q360,10 367,16 Q360,20 353,17 Q346,20 338,16Z" fill="#1E0A02" opacity="0.55"/>
+  <ellipse cx="353" cy="14" rx="2.2" ry="1.7" fill="#1E0A02" opacity="0.55"/>
+  <path d="M351,16 Q353,20 355,16" stroke="#1E0A02" stroke-width="1.2" fill="none" opacity="0.5"/>
+  <!-- Saguaro left 2 arms -->
+  <g fill="#1E0C04" opacity="0.85">
+    <rect x="28" y="22" width="12" height="92" rx="4"/>
+    <rect x="18" y="52" width="22" height="7" rx="3"/>
+    <rect x="10" y="30" width="12" height="30" rx="4"/>
+    <rect x="10" y="26" width="12" height="8" rx="5"/>
+    <rect x="40" y="64" width="20" height="7" rx="3"/>
+    <rect x="48" y="44" width="12" height="28" rx="4"/>
+    <rect x="48" y="40" width="12" height="8" rx="5"/>
+  </g>
+  <!-- Saguaro center 2 arms -->
+  <g fill="#1E0C04" opacity="0.8">
+    <rect x="238" y="14" width="13" height="100" rx="5"/>
+    <rect x="225" y="58" width="25" height="7" rx="3"/>
+    <rect x="214" y="34" width="13" height="28" rx="5"/>
+    <rect x="214" y="30" width="13" height="8" rx="5"/>
+    <rect x="251" y="44" width="22" height="7" rx="3"/>
+    <rect x="261" y="22" width="13" height="26" rx="5"/>
+    <rect x="261" y="18" width="13" height="8" rx="5"/>
+  </g>
+  <!-- Elf owl cavity + head in right arm -->
+  <ellipse cx="268" cy="38" rx="5.5" ry="4.5" fill="#080402" opacity="0.95"/>
+  <g transform="translate(268,33)">
+    <ellipse cx="0" cy="0" rx="5.5" ry="5" fill="#5A3A18" opacity="0.95"/>
+    <ellipse cx="0" cy="1" rx="4.5" ry="4" fill="#C4956A" opacity="0.55"/>
+    <path d="M-3,-4 Q-2.5,-7.5 -1,-5" stroke="#3A2008" stroke-width="1.4" fill="none" opacity="0.88"/>
+    <path d="M3,-4 Q2.5,-7.5 1,-5" stroke="#3A2008" stroke-width="1.4" fill="none" opacity="0.88"/>
+    <path d="M-1,1 Q0,3.5 1,1" fill="#C4782A" opacity="0.92"/>
+    <ellipse cx="-2.2" cy="-1" rx="2.6" ry="2.6" fill="#080402" opacity="0.97"/>
+    <ellipse cx="2.2" cy="-1" rx="2.6" ry="2.6" fill="#080402" opacity="0.97"/>
+    <ellipse cx="-2.2" cy="-1" rx="1.7" ry="1.7" fill="#F5D020" opacity="1"/>
+    <ellipse cx="2.2" cy="-1" rx="1.7" ry="1.7" fill="#F5D020" opacity="1"/>
+    <ellipse cx="-2.2" cy="-1" rx="0.85" ry="0.85" fill="#060302" opacity="1"/>
+    <ellipse cx="2.2" cy="-1" rx="0.85" ry="0.85" fill="#060302" opacity="1"/>
+    <ellipse cx="-1.6" cy="-1.6" rx="0.35" ry="0.35" fill="white" opacity="0.95"/>
+    <ellipse cx="2.8" cy="-1.6" rx="0.35" ry="0.35" fill="white" opacity="0.95"/>
+    <path d="M-4.5,-2.5 Q-2.5,-4.5 -0.5,-3.5" stroke="#E8D5A0" stroke-width="0.9" fill="none" opacity="0.75"/>
+    <path d="M4.5,-2.5 Q2.5,-4.5 0.5,-3.5" stroke="#E8D5A0" stroke-width="0.9" fill="none" opacity="0.75"/>
+  </g>
+  <!-- Cholla right of center saguaro -->
+  <g stroke="#3A2008" stroke-linecap="round" fill="none" opacity="0.78">
+    <line x1="295" y1="130" x2="295" y2="78" stroke-width="5.5"/>
+    <line x1="295" y1="98" x2="275" y2="74" stroke-width="4.5"/>
+    <line x1="295" y1="88" x2="312" y2="68" stroke-width="4.5"/>
+    <line x1="275" y1="74" x2="263" y2="57" stroke-width="4"/>
+    <line x1="275" y1="74" x2="284" y2="56" stroke-width="4"/>
+    <line x1="312" y1="68" x2="320" y2="52" stroke-width="4"/>
+    <line x1="295" y1="78" x2="301" y2="60" stroke-width="4"/>
+  </g>
+  <g stroke="#9A7040" stroke-width="1.1" opacity="0.55">
+    <line x1="289" y1="115" x2="282" y2="112"/><line x1="289" y1="115" x2="282" y2="118"/>
+    <line x1="301" y1="112" x2="308" y2="109"/><line x1="301" y1="112" x2="308" y2="115"/>
+    <line x1="271" y1="83" x2="264" y2="81"/><line x1="280" y1="79" x2="276" y2="73"/>
+    <line x1="307" y1="77" x2="301" y2="74"/><line x1="314" y1="67" x2="319" y2="62"/>
+  </g>
+  <!-- Prickly pear -->
+  <g opacity="0.85">
+    <ellipse cx="148" cy="118" rx="16" ry="12" transform="rotate(-12,148,118)" fill="#3A5A18"/>
+    <ellipse cx="158" cy="103" rx="14" ry="10" transform="rotate(8,158,103)" fill="#3A5A18"/>
+    <ellipse cx="149" cy="89" rx="12" ry="9" transform="rotate(-6,149,89)" fill="#3A5A18"/>
+    <ellipse cx="133" cy="107" rx="13" ry="9" transform="rotate(-28,133,107)" fill="#3A5A18"/>
+    <ellipse cx="163" cy="115" rx="11" ry="8" transform="rotate(18,163,115)" fill="#3A5A18"/>
+    <ellipse cx="152" cy="82" rx="5.5" ry="3.8" fill="#8B2A3A" opacity="0.92"/>
+    <ellipse cx="144" cy="84" rx="4" ry="3" fill="#7A2030" opacity="0.88"/>
+  </g>
+  <!-- Saguaro far right blooming -->
+  <g fill="#1E0C04" opacity="0.62">
+    <rect x="456" y="48" width="10" height="67" rx="3"/>
+    <rect x="446" y="66" width="20" height="5" rx="2"/>
+    <rect x="438" y="53" width="10" height="21" rx="3"/>
+    <rect x="438" y="49" width="10" height="7" rx="3"/>
+    <rect x="466" y="73" width="18" height="5" rx="2"/>
+    <rect x="466" y="61" width="10" height="19" rx="3"/>
+    <rect x="466" y="57" width="10" height="7" rx="3"/>
+  </g>
+  <g opacity="0.9">
+    <ellipse cx="461" cy="47" rx="7" ry="4.5" fill="#FFFDE8"/>
+    <ellipse cx="454" cy="49" rx="4.5" ry="3.2" fill="#FFFDE8"/>
+    <ellipse cx="468" cy="49" rx="4.5" ry="3.2" fill="#FFFDE8"/>
+    <ellipse cx="461" cy="47" rx="2.2" ry="1.6" fill="#F5C830"/>
+    <ellipse cx="454" cy="49" rx="1.7" ry="1.3" fill="#F5C830"/>
+    <ellipse cx="468" cy="49" rx="1.7" ry="1.3" fill="#F5C830"/>
+    <ellipse cx="442" cy="49" rx="5" ry="3.2" fill="#FFFDE8"/>
+    <ellipse cx="442" cy="48" rx="2" ry="1.5" fill="#F5C830"/>
+    <ellipse cx="470" cy="57" rx="5" ry="3.2" fill="#FFFDE8"/>
+    <ellipse cx="470" cy="56" rx="2" ry="1.5" fill="#F5C830"/>
+  </g>
+  <!-- Hedgehog -->
+  <g opacity="0.85">
+    <ellipse cx="398" cy="122" rx="15" ry="18" fill="#5A3A18"/>
+    <ellipse cx="398" cy="122" rx="15" ry="18" fill="none" stroke="#E87840" stroke-width="2" opacity="0.45"/>
+    <line x1="392" y1="106" x2="390" y2="98" stroke="#C4A050" stroke-width="1.4"/>
+    <line x1="398" y1="104" x2="398" y2="97" stroke="#C4A050" stroke-width="1.4"/>
+    <line x1="404" y1="106" x2="406" y2="98" stroke="#C4A050" stroke-width="1.4"/>
+    <ellipse cx="398" cy="104" rx="7" ry="4.5" fill="#E8507A" opacity="0.9"/>
+    <ellipse cx="391" cy="106" rx="4.5" ry="2.8" fill="#D84068" opacity="0.85"/>
+    <ellipse cx="405" cy="106" rx="4.5" ry="2.8" fill="#E06080" opacity="0.85"/>
+    <ellipse cx="398" cy="102" rx="2.8" ry="2" fill="#F5C830" opacity="0.9"/>
+  </g>
+  <!-- Gila monster -->
+  <g transform="translate(168,113) scale(0.83)">
+    <ellipse cx="82" cy="9" rx="36" ry="11" fill="#4A2A08" opacity="0.93"/>
+    <ellipse cx="56" cy="8" rx="6" ry="5" fill="#C85A18" opacity="0.88"/>
+    <ellipse cx="70" cy="7" rx="6" ry="5" fill="#C85A18" opacity="0.88"/>
+    <ellipse cx="84" cy="7" rx="6" ry="5" fill="#C85A18" opacity="0.88"/>
+    <ellipse cx="98" cy="8" rx="6" ry="5" fill="#C85A18" opacity="0.88"/>
+    <ellipse cx="63" cy="8" rx="4" ry="3.2" fill="#2A1004" opacity="0.68"/>
+    <ellipse cx="77" cy="7" rx="4" ry="3.2" fill="#2A1004" opacity="0.68"/>
+    <ellipse cx="91" cy="8" rx="4" ry="3.2" fill="#2A1004" opacity="0.68"/>
+    <ellipse cx="28" cy="9" rx="18" ry="10" fill="#3A1E06" opacity="0.96"/>
+    <ellipse cx="26" cy="9" rx="15" ry="8" fill="#4A2A08" opacity="0.9"/>
+    <ellipse cx="18" cy="6" rx="3" ry="2.4" fill="#1A0A02"/>
+    <ellipse cx="17.5" cy="5.8" rx="1.2" ry="1" fill="#F5A030" opacity="0.92"/>
+    <line x1="6" y1="10" x2="0" y2="9" stroke="#C83030" stroke-width="1.4"/>
+    <line x1="0" y1="9" x2="-4" y2="7" stroke="#C83030" stroke-width="1.2"/>
+    <line x1="0" y1="9" x2="-4" y2="11" stroke="#C83030" stroke-width="1.2"/>
+    <ellipse cx="118" cy="10" rx="16" ry="8" fill="#4A2A08" opacity="0.88"/>
+    <ellipse cx="133" cy="12" rx="10" ry="5" fill="#3A1E06" opacity="0.85"/>
+    <ellipse cx="142" cy="14" rx="6" ry="3.2" fill="#2A1204" opacity="0.8"/>
+    <line x1="52" y1="17" x2="44" y2="26" stroke="#3A1E06" stroke-width="4" stroke-linecap="round"/>
+    <line x1="44" y1="26" x2="36" y2="28" stroke="#3A1E06" stroke-width="3" stroke-linecap="round"/>
+    <line x1="72" y1="18" x2="77" y2="28" stroke="#3A1E06" stroke-width="4" stroke-linecap="round"/>
+    <line x1="77" y1="28" x2="84" y2="30" stroke="#3A1E06" stroke-width="3" stroke-linecap="round"/>
+    <line x1="92" y1="18" x2="86" y2="27" stroke="#3A1E06" stroke-width="4" stroke-linecap="round"/>
+    <line x1="86" y1="27" x2="79" y2="29" stroke="#3A1E06" stroke-width="3" stroke-linecap="round"/>
+    <line x1="108" y1="17" x2="116" y2="26" stroke="#3A1E06" stroke-width="4" stroke-linecap="round"/>
+    <line x1="116" y1="26" x2="123" y2="27" stroke="#3A1E06" stroke-width="3" stroke-linecap="round"/>
+  </g>
+  <text x="22" y="36" font-family="'Abril Fatface',serif" font-size="24" fill="#F5ECD7" opacity="0.97">The Brew Log</text>
+  <text x="22" y="128" font-family="'Raleway',sans-serif" font-size="8.5" fill="#E8D5B0" opacity="0.85" letter-spacing="3" font-weight="700">10K CUPS OF LOVE</text>
+</svg>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('add',this)">Add Bean</button>
+  <button class="tab" onclick="switchTab('library',this)">Library</button>
+  <button class="tab" onclick="switchTab('recipes',this)">Recipes</button>
+</div>
+
+<div class="scroll">
+
+  <!-- ADD BEAN -->
+  <div id="tab-add" class="panel active">
+    <div class="slabel">Scan bag label</div>
+    <div class="cam-row">
+      <div class="cam-btn" onclick="triggerCamera()"><span class="ci">📷</span><strong>Take Photo</strong><p>Use camera</p></div>
+      <div class="cam-btn" onclick="triggerLibrary()"><span class="ci">🖼</span><strong>Photo Library</strong><p>Choose existing</p></div>
+    </div>
+    <input type="file" id="fi-camera" accept="image/*" capture="environment" style="display:none" onchange="handleFile(this.files[0])">
+    <input type="file" id="fi-library" accept="image/*" style="display:none" onchange="handleFile(this.files[0])">
+    <img id="prevImg" style="display:none;width:100%;max-height:90px;object-fit:cover;border-radius:var(--r);margin-bottom:0.6rem;border:1px solid var(--border)">
+    <div id="scanSt"></div>
+
+    <div class="slabel">Bean details</div>
+    <div class="grid">
+      <div class="fg full"><label>Bean name *</label><input type="text" id="fn" placeholder="e.g. Hambela Benti Nenka"></div>
+      <div class="fg">
+        <label>Origin *</label>
+        <input type="text" id="fo" placeholder="e.g. Ethiopia" oninput="autoWorld(this.value)">
+        <div class="world-row" id="worldRow" style="display:none">
+          <div class="wopt" id="wOld" onclick="setWorld('old')"><span class="wdot" id="wdOld"></span> Old World</div>
+          <div class="wopt" id="wNew" onclick="setWorld('new')"><span class="wdot" id="wdNew"></span> New World</div>
+        </div>
+      </div>
+      <div class="fg"><label>Region</label><input type="text" id="freg" placeholder="e.g. Guji"></div>
+      <div class="fg"><label>Variety</label><input type="text" id="fv" placeholder="e.g. Heirloom"></div>
+      <div class="fg">
+        <label>Process</label>
+        <select id="fp">
+          <option value="">Select...</option>
+          <option>Washed</option><option>Natural</option><option>Honey</option>
+          <option>Anaerobic Natural</option><option>Anaerobic Washed</option>
+          <option>Special Prep Natural</option><option>Carbonic Maceration</option><option>Other</option>
+        </select>
+      </div>
+      <div class="fg"><label>Roaster</label><input type="text" id="fro" placeholder="e.g. Presta"></div>
+      <div class="fg full">
+        <label>Roast date</label>
+        <input type="date" id="frd" oninput="updateRoastAge()">
+        <div class="roast-age" id="roastAge" style="display:none">
+          <div>
+            <div class="roast-age-num" id="ageDays">—</div>
+            <div class="roast-age-lbl" id="ageLabel">days since roast</div>
+          </div>
+          <div class="roast-bar-wrap">
+            <div class="roast-bar-header"><span>Fresh</span><span id="ageStatus" style="font-size:0.55rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em"></span></div>
+            <div class="roast-bar-bg"><div class="roast-bar-fill" id="ageBar" style="width:0%"></div></div>
+            <div class="roast-bar-ticks"><span>0d</span><span>14d</span><span>30d</span><span>60d+</span></div>
+          </div>
+        </div>
+        <div class="freeze-toggle" id="freezeToggle" style="display:none" onclick="toggleFreeze()">
+          <span class="freeze-check" id="freezeCheck"></span>
+          <span class="freeze-lbl" id="freezeLbl">Bean was frozen</span>
+        </div>
+        <div id="freezeDates" style="display:none">
+          <div class="freeze-dates">
+            <div class="fg"><label>Frozen on</label><input type="date" id="fFreezeDate" oninput="updateRoastAge()"></div>
+            <div class="fg"><label>Thawed on</label><input type="date" id="fThawDate" oninput="updateRoastAge()"></div>
+          </div>
+          <div class="freeze-note" id="freezeNote" style="display:none"></div>
+        </div>
+      </div>
+      <div class="fg"><label>Altitude (masl)</label><input type="text" id="fa" placeholder="e.g. 1900–2250"></div>
+      <div class="fg full"><label>Flavor notes</label><input type="text" id="ffl" placeholder="e.g. blueberry, peach, kaffir lime"></div>
+      <div class="fg full">
+        <label>Price</label>
+        <div class="price-row">
+          <input type="number" class="price-amt" id="fPrice" placeholder="23" oninput="calcCost()">
+          <span class="price-sep">per</span>
+          <input type="number" class="price-qty" id="fQty" placeholder="10" oninput="calcCost()">
+          <select class="unit-sel" id="fUnit" onchange="calcCost()">
+            <option>oz</option><option>lb</option><option>g</option><option>kg</option>
+          </select>
+        </div>
+        <div class="cost-pills" id="costPills" style="display:none">
+          <div class="cpill" id="pillDay"></div>
+          <div class="cpill" id="pillDays"></div>
+        </div>
+      </div>
+    </div>
+
+    <hr>
+    <div class="slabel">Recipe options</div>
+    <div style="display:flex;flex-direction:column;gap:0.55rem;margin-bottom:0.7rem">
+      <div>
+        <label style="display:block;margin-bottom:0.35rem">Brewer</label>
+        <div class="tgroup">
+          <button class="tbtn active" id="bv60" onclick="setBrew('v60')">V60 — Paul</button>
+          <button class="tbtn" id="bswitch" onclick="setBrew('switch')">Switch — Heather</button>
+          <button class="tbtn" id="bboth" onclick="setBrew('both')">Both</button>
+        </div>
+      </div>
+      <div>
+        <label style="display:block;margin-bottom:0.35rem">Grinder location</label>
+        <div class="tgroup">
+          <button class="tbtn active" id="gak" onclick="setGrind('AK')">AK — Ode Gen 1</button>
+          <button class="tbtn" id="gaz" onclick="setGrind('AZ')">AZ — Ode Gen 2</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="brow">
+      <button class="btn btn-primary" id="genBtn" onclick="generateRecipe()">Generate recipe</button>
+      <button class="btn btn-ghost" style="width:auto;padding-left:0.9rem;padding-right:0.9rem" onclick="saveBeanOnly()">Save bean</button>
+    </div>
+
+    <div id="recipeOut"></div>
+    <div id="saveRow" style="display:none">
+      <hr>
+      <p style="font-size:0.78rem;color:var(--muted);margin-bottom:0.5rem">Dialed in? Save this recipe permanently.</p>
+      <button class="btn btn-primary" onclick="saveDialedIn()">Save as dialed-in</button>
+    </div>
+  </div>
+
+  <!-- LIBRARY -->
+  <div id="tab-library" class="panel">
+    <div class="slabel">Your beans</div>
+    <div id="beanList"></div>
+  </div>
+
+  <!-- RECIPES -->
+  <div id="tab-recipes" class="panel">
+    <div class="slabel">Dialed-in recipes</div>
+    <div id="recipeList"></div>
+  </div>
+
+</div>
+
+<script>
+const SYSTEM=`You are a specialty coffee brewing expert and personal advisor for Paul. You have deep knowledge of his setup and preferences.
+
+EQUIPMENT:
+- AK (primary): Fellow Ode Gen 1 with Gen 2 burrs
+- AZ (secondary): Fellow Ode Gen 2
+- CRITICAL GRIND RULE: Valid settings are ONLY whole numbers (5,6,7...) and +0.1 or +0.2 steps (6.0,6.1,6.2,7.0,7.1,7.2). Never recommend any other decimal. Non-negotiable.
+- V60 brew: 400ml water (Paul)
+- Hario Switch brew: 500ml water, full immersion (Heather)
+- All temperatures in °F
+
+FLAVOR PREFERENCE: fruit-forward, clear, clean — especially for naturals and anaerobics. Minimal agitation unless intentionally adjusting.
+
+OLD WORLD vs NEW WORLD: Old World (Ethiopia, Kenya, Yemen etc.) tends toward floral, bright, tea-like complexity. New World (Colombia, Brazil etc.) tends toward heavier body, chocolate, stone fruit. Anaerobic New World beans can be especially expressive and funky. Adjust temp and agitation accordingly.
+
+FROZEN BEANS: If a bean has been recently thawed, note it may need a slightly coarser grind for the first 1-2 days as it off-gasses. Factor in effective roast age (calendar days minus days frozen) when assessing freshness.
+
+PAUL'S DIALED-IN BASELINES:
+- Halo Beriti V60: 25g/400ml/grind 6.1/three-pour/60g bloom 0:00/swirl 0:15/pour 2 at 0:45/pour 3 at 1:30/204-205°F/target 3:20-3:30
+- Halo Beriti Switch (Heather): 30g/500ml/grind 6.1/water first then coffee/steep to 3:00/stir/drain at 4:00
+
+BEAN DATABASE:
+- Halo Beriti: Ethiopia, Yirgacheffe, Heirloom, 2100-2300 masl, Special Prep Natural, Rogue Wave. Notes: plum, red grape, blueberry, mandarin, vanilla.
+- Hambela Benti Nenka: Ethiopia, Guji, Heirloom, 1900-2250 masl, Natural, Presta. Notes: blueberry, lemongrass, peach, apricot, kaffir lime.
+- El Paraiso: Colombia, Nariño, Caturra, 1200-1900 masl, Anaerobic Natural, Presta. Notes: blackberries, caramel, cherry, dark chocolate, orange, passionfruit.
+
+RESPONSE FORMAT — concise, Paul is brewing:
+1. Parameter table: dose, water, ratio, grind, temp, target time
+2. Step-by-step sequence with exact timestamps
+3. 2-3 sentences of rationale referencing the bean's process, world origin, and flavor profile. If recently thawed, note grind adjustment.`;
+
+const OLD_WORLD=['ethiopia','kenya','yemen','uganda','rwanda','burundi','tanzania','congo','zambia','malawi','zimbabwe','cameroon','ivory coast','guinea'];
+const NEW_WORLD=['colombia','brazil','peru','bolivia','ecuador','guatemala','honduras','el salvador','mexico','costa rica','panama','nicaragua','haiti','dominican republic','indonesia','papua new guinea','vietnam','india','philippines','myanmar','laos','thailand','jamaica'];
+
+let brewer='v60',grinder='AK',worldVal='',frozenOn=false,lastRecipe='',lastBean={};
+let sb=null,titleTaps=0,titleTimer=null;
+let swInterval=null,swRunning=false,swMs=0;
+let swPours=[];
+
+const ls=k=>localStorage.getItem(k)||'';
+const lss=(k,v)=>localStorage.setItem(k,v);
+
+function getKey(name){
+  const cfg=window.BREW_CONFIG||{};
+  const map={anthropic_key:'anthropicKey',sb_url:'supabaseUrl',sb_key:'supabaseKey'};
+  const v=cfg[map[name]];
+  return v&&!v.includes('YOUR_')?v:(ls(name));
+}
+function initSB(){
+  const url=getKey('sb_url'),key=getKey('sb_key');
+  if(url&&key){try{sb=supabase.createClient(url,key)}catch(e){sb=null}}
+}
+
+document.getElementById('appHeader').addEventListener('click',()=>{
+  titleTaps++;clearTimeout(titleTimer);
+  titleTimer=setTimeout(()=>titleTaps=0,2000);
+  if(titleTaps>=7){titleTaps=0;openSettings();}
+});
+
+function openSettings(){
+  const fromCfg=window.BREW_CONFIG&&window.BREW_CONFIG.anthropicKey&&!window.BREW_CONFIG.anthropicKey.includes('YOUR_');
+  document.getElementById('cfgNotice').style.display=fromCfg?'block':'none';
+  document.getElementById('apiKeyIn').value=getKey('anthropic_key');
+  document.getElementById('sbUrl').value=getKey('sb_url');
+  document.getElementById('sbKey').value=getKey('sb_key');
+  document.getElementById('settingsOverlay').style.display='block';
+}
+function closeSettings(){document.getElementById('settingsOverlay').style.display='none'}
+function saveAnthropicKey(){const k=document.getElementById('apiKeyIn').value.trim();if(!k){st('kst1','Enter a key.','err');return}lss('anthropic_key',k);st('kst1','✓ API key saved.','ok');checkAllGood();}
+function saveSupabase(){const url=document.getElementById('sbUrl').value.trim();const key=document.getElementById('sbKey').value.trim();if(!url||!key){st('kst2','Enter both fields.','err');return}lss('sb_url',url);lss('sb_key',key);initSB();st('kst2','✓ Supabase connected.','ok');checkAllGood();}
+function checkAllGood(){if(getKey('anthropic_key')&&getKey('sb_url')&&getKey('sb_key'))document.getElementById('allGood').style.display='block';}
+function st(id,msg,cls){document.getElementById(id).innerHTML=`<div class="alert ${cls}" style="margin-top:0.4rem">${msg}</div>`;}
+function copySql(){navigator.clipboard.writeText(document.getElementById('sqlBlock').textContent).then(()=>alert('SQL copied!'));}
+
+function switchTab(t,el){
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-'+t).classList.add('active');
+  if(t==='library')renderLibrary();
+  if(t==='recipes')renderRecipes();
+}
+function setBrew(b){brewer=b;['v60','switch','both'].forEach(x=>document.getElementById('b'+x).classList.toggle('active',x===b));}
+function setGrind(g){grinder=g;document.getElementById('gak').classList.toggle('active',g==='AK');document.getElementById('gaz').classList.toggle('active',g==='AZ');}
+function triggerCamera(){document.getElementById('fi-camera').click()}
+function triggerLibrary(){document.getElementById('fi-library').click()}
+
+function handleFile(file){
+  if(!file)return;
+  const r=new FileReader();
+  r.onload=e=>{const img=document.getElementById('prevImg');img.src=e.target.result;img.style.display='block';scanLabel(e.target.result.split(',')[1],file.type||'image/jpeg');};
+  r.readAsDataURL(file);
+}
+
+async function scanLabel(b64,mime){
+  const key=getKey('anthropic_key');
+  if(!key){openSettings();return}
+  document.getElementById('scanSt').innerHTML='<div class="loading"><div class="spin"></div> Reading label...</div>';
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:600,
+        messages:[{role:'user',content:[
+          {type:'image',source:{type:'base64',media_type:mime,data:b64}},
+          {type:'text',text:'Specialty coffee bag label. Return JSON only (no markdown, no backticks): {"name":"","origin":"","region":"","variety":"","process":"","roaster":"","roastDate":"","altitude":"","flavorNotes":"","price":"","priceQty":"","priceUnit":""}. Empty string for missing. roastDate as YYYY-MM-DD. priceUnit as oz/lb/g/kg.'}
+        ]}]})
+    });
+    const data=await res.json();
+    if(data.error)throw new Error(data.error.message);
+    const parsed=JSON.parse(data.content.map(c=>c.text||'').join('').replace(/```json|```/g,'').trim());
+    fillForm(parsed);
+    document.getElementById('scanSt').innerHTML='<div class="alert ok">✓ Label scanned — check and adjust below.</div>';
+  }catch(e){document.getElementById('scanSt').innerHTML=`<div class="alert err">Scan failed: ${e.message||'Check API key.'}</div>`;}
+}
+
+function fillForm(d){
+  const s=(id,v)=>{const el=document.getElementById(id);if(el&&v)el.value=v};
+  s('fn',d.name);s('fo',d.origin);s('freg',d.region);s('fv',d.variety);
+  s('fro',d.roaster);s('frd',d.roastDate);s('fa',d.altitude);s('ffl',d.flavorNotes);
+  if(d.price)s('fPrice',d.price.replace(/[^0-9.]/g,''));
+  if(d.priceQty)s('fQty',d.priceQty);
+  if(d.priceUnit){const sel=document.getElementById('fUnit');[...sel.options].forEach(o=>{if(o.value===d.priceUnit)sel.value=o.value})}
+  if(d.process){const sel=document.getElementById('fp');[...sel.options].forEach(o=>{if(o.value.toLowerCase().replace(/[\s-]/g,'').includes(d.process.toLowerCase().replace(/[\s-]/g,'')))sel.value=o.value})}
+  if(d.origin)autoWorld(d.origin);
+  if(d.roastDate)updateRoastAge();
+  calcCost();
+}
+
+function autoWorld(country){
+  const c=country.toLowerCase().trim();
+  const ow=OLD_WORLD.some(x=>c.includes(x));
+  const nw=NEW_WORLD.some(x=>c.includes(x));
+  document.getElementById('worldRow').style.display=c?'flex':'none';
+  if(ow)setWorld('old');else if(nw)setWorld('new');
+  else{['wOld','wNew'].forEach(x=>document.getElementById(x).classList.remove('active'));['wdOld','wdNew'].forEach(x=>document.getElementById(x).className='wdot');worldVal='';}
+}
+function setWorld(w){
+  worldVal=w;
+  document.getElementById('wOld').classList.toggle('active',w==='old');
+  document.getElementById('wNew').classList.toggle('active',w==='new');
+  document.getElementById('wdOld').className='wdot'+(w==='old'?' filled':'');
+  document.getElementById('wdNew').className='wdot'+(w==='new'?' filled':'');
+}
+
+function toggleFreeze(){
+  frozenOn=!frozenOn;
+  document.getElementById('freezeCheck').className='freeze-check'+(frozenOn?' on':'');
+  document.getElementById('freezeLbl').className='freeze-lbl'+(frozenOn?' on':'');
+  document.getElementById('freezeDates').style.display=frozenOn?'block':'none';
+  updateRoastAge();
+}
+
+function updateRoastAge(){
+  const roastStr=document.getElementById('frd').value;
+  if(!roastStr){document.getElementById('roastAge').style.display='none';document.getElementById('freezeToggle').style.display='none';return}
+  const roast=new Date(roastStr);const today=new Date();
+  const calDays=Math.floor((today-roast)/(1000*60*60*24));
+  if(calDays<0){document.getElementById('roastAge').style.display='none';document.getElementById('freezeToggle').style.display='none';return}
+  document.getElementById('freezeToggle').style.display='flex';
+  let daysFrozen=0;
+  if(frozenOn){
+    const fStr=document.getElementById('fFreezeDate').value;
+    const tStr=document.getElementById('fThawDate').value;
+    if(fStr){const fd=new Date(fStr);const td=tStr?new Date(tStr):today;daysFrozen=Math.max(0,Math.floor((td-fd)/(1000*60*60*24)));}
+  }
+  const effDays=Math.max(0,calDays-daysFrozen);
+  document.getElementById('roastAge').style.display='flex';
+  document.getElementById('ageDays').textContent=effDays;
+  document.getElementById('ageLabel').textContent=frozenOn&&daysFrozen>0?'effective days ('+daysFrozen+'d frozen)':'days since roast';
+  const pct=Math.min(effDays/60*100,100);
+  const bar=document.getElementById('ageBar');const status=document.getElementById('ageStatus');
+  bar.style.width=pct+'%';
+  if(effDays<7){bar.style.background='#8B6040';status.textContent='Too fresh';status.style.color='#8B6040';}
+  else if(effDays<=30){bar.style.background='#4A8A2A';status.textContent='Peak window';status.style.color='#4A8A2A';}
+  else if(effDays<=45){bar.style.background='#A0522D';status.textContent='Drink soon';status.style.color='#A0522D';}
+  else{bar.style.background='#8B2A0A';status.textContent='Past peak';status.style.color='#8B2A0A';}
+  if(frozenOn&&daysFrozen>0){
+    const tStr=document.getElementById('fThawDate').value;
+    const thawDate=tStr?new Date(tStr):null;
+    const sinceThaw=thawDate?Math.floor((today-thawDate)/(1000*60*60*24)):0;
+    let note=`Frozen for ${daysFrozen} day${daysFrozen!==1?'s':''}.`;
+    if(thawDate&&sinceThaw<=2)note+=' Recently thawed — consider 0.1 coarser on grind for the first day or two as the bean off-gasses.';
+    else if(thawDate)note+=` Thawed ${sinceThaw} days ago — fully off-gassed, brew normally.`;
+    document.getElementById('freezeNote').textContent=note;
+    document.getElementById('freezeNote').style.display='block';
+  }else{document.getElementById('freezeNote').style.display='none';}
+}
+
+function calcCost(){
+  const price=parseFloat(document.getElementById('fPrice').value);
+  const qty=parseFloat(document.getElementById('fQty').value)||1;
+  const unit=document.getElementById('fUnit').value;
+  if(isNaN(price)||price<=0){document.getElementById('costPills').style.display='none';return}
+  const toG={oz:28.3495,lb:453.592,g:1,kg:1000};
+  const totalG=qty*(toG[unit]||1);
+  document.getElementById('pillDay').textContent='$'+(price/totalG*55).toFixed(2)+' / day';
+  document.getElementById('pillDays').textContent='~'+(totalG/55).toFixed(1)+' days per bag';
+  document.getElementById('costPills').style.display='flex';
+}
+
+function getForm(){
+  const price=document.getElementById('fPrice').value.trim();
+  const qty=document.getElementById('fQty').value.trim();
+  const unit=document.getElementById('fUnit').value;
+  return{
+    name:document.getElementById('fn').value.trim(),origin:document.getElementById('fo').value.trim(),
+    region:document.getElementById('freg').value.trim(),variety:document.getElementById('fv').value.trim(),
+    process:document.getElementById('fp').value,roaster:document.getElementById('fro').value.trim(),
+    roastDate:document.getElementById('frd').value,altitude:document.getElementById('fa').value.trim(),
+    flavorNotes:document.getElementById('ffl').value.trim(),
+    price:price?(price+' per '+(qty?qty+' ':'')+unit):'',
+    world:worldVal,frozen:frozenOn,
+    freezeDate:frozenOn?document.getElementById('fFreezeDate').value:'',
+    thawDate:frozenOn?document.getElementById('fThawDate').value:''
+  };
+}
+
+// ── STOPWATCH ───────────────────────────────────────────
+function fmtTime(ms){
+  const t=Math.floor(ms/1000);
+  const m=Math.floor(t/60);
+  const s=t%60;
+  return m+':'+(s<10?'0':'')+s;
+}
+
+function parsePours(recipeText){
+  // Extract pour steps with timestamps from recipe text
+  const lines=recipeText.split('\n');
+  const pours=[];
+  const timeRe=/(\d+):(\d{2})/;
+  lines.forEach(line=>{
+    const stripped=line.replace(/<[^>]+>/g,'').replace(/\*\*/g,'').trim();
+    const m=stripped.match(timeRe);
+    if(m&&stripped.length>4){
+      const secs=parseInt(m[1])*60+parseInt(m[2]);
+      pours.push({secs,label:stripped});
+    }
+  });
+  return pours;
+}
+
+function buildStopwatch(recipeText){
+  swPours=parsePours(recipeText);
+  swMs=0;swRunning=false;
+  if(swInterval)clearInterval(swInterval);
+
+  const pourRows=swPours.map((p,i)=>`
+    <div class="sw-pour-row" id="swp${i}">
+      <span class="sw-pour-time">${fmtTime(p.secs*1000)}</span>
+      <span class="sw-pour-desc">${p.label.replace(/^\d+:\d{2}\s*[—-]?\s*/,'')}</span>
+    </div>`).join('');
+
+  return`<div class="stopwatch">
+    <div class="sw-display" id="swDisplay">0:00</div>
+    <div class="sw-btns">
+      <button class="sw-btn start" id="swStartBtn" onclick="swToggle()">Start</button>
+      <button class="sw-btn reset" onclick="swReset()">Reset</button>
+    </div>
+    ${swPours.length?`<div class="sw-pours">${pourRows}</div>`:''}
+  </div>`;
+}
+
+function swToggle(){
+  if(swRunning){
+    clearInterval(swInterval);swRunning=false;
+    document.getElementById('swStartBtn').textContent='Resume';
+    document.getElementById('swStartBtn').className='sw-btn start';
+  }else{
+    const t0=Date.now()-swMs;
+    swRunning=true;
+    document.getElementById('swStartBtn').textContent='Stop';
+    document.getElementById('swStartBtn').className='sw-btn stop';
+    swInterval=setInterval(()=>{
+      swMs=Date.now()-t0;
+      document.getElementById('swDisplay').textContent=fmtTime(swMs);
+      updateSwPours();
+    },100);
+  }
+}
+
+function swReset(){
+  clearInterval(swInterval);swRunning=false;swMs=0;
+  const btn=document.getElementById('swStartBtn');
+  if(btn){btn.textContent='Start';btn.className='sw-btn start';}
+  const disp=document.getElementById('swDisplay');
+  if(disp)disp.textContent='0:00';
+  updateSwPours();
+}
+
+function updateSwPours(){
+  const nowSecs=swMs/1000;
+  swPours.forEach((p,i)=>{
+    const el=document.getElementById('swp'+i);
+    if(!el)return;
+    const next=swPours[i+1];
+    const isActive=nowSecs>=p.secs&&(!next||nowSecs<next.secs);
+    const isDone=next&&nowSecs>=next.secs;
+    el.className='sw-pour-row'+(isActive?' active':isDone?' done':'');
+  });
+}
+
+// ── RECIPE GENERATION ──────────────────────────────────
+async function generateRecipe(){
+  const key=getKey('anthropic_key');
+  if(!key){openSettings();return}
+  const bean=getForm();
+  if(!bean.name){alert('Please enter a bean name.');return}
+  lastBean=bean;
+  const btn=document.getElementById('genBtn');
+  btn.disabled=true;
+  document.getElementById('recipeOut').innerHTML='<div class="loading"><div class="spin"></div> Generating recipe...</div>';
+  document.getElementById('saveRow').style.display='none';
+
+  let dialedCtx='';
+  try{
+    let saved=[];
+    if(sb){const{data}=await sb.from('recipes').select('*').order('created_at',{ascending:false}).limit(10);if(data)saved=data;}
+    else{const r=localStorage.getItem('brew_recipes');if(r)saved=JSON.parse(r);}
+    if(saved.length)dialedCtx='\n\nUSER DIALED-IN RECIPES:\n'+saved.map(r=>`${r.bean_name||r.beanName} (${r.brewer}, ${r.grinder}): ${(r.recipe_text||r.recipe||'').substring(0,250)}`).join('\n\n');
+  }catch(e){}
+
+  let freezeCtx='';
+  if(bean.frozen&&bean.freezeDate){
+    const thawDate=bean.thawDate?new Date(bean.thawDate):new Date();
+    const daysFrozen=Math.max(0,Math.floor((thawDate-new Date(bean.freezeDate))/(1000*60*60*24)));
+    const daysSinceThaw=bean.thawDate?Math.floor((new Date()-new Date(bean.thawDate))/(1000*60*60*24)):0;
+    freezeCtx=`\nFreeze info: frozen for ${daysFrozen} days, thawed ${daysSinceThaw} day(s) ago.`;
+  }
+
+  const bDesc=[`Bean: ${bean.name}`,bean.origin&&`Origin: ${bean.origin}${bean.region?', '+bean.region:''}`,
+    bean.world&&`World: ${bean.world==='old'?'Old World':'New World'}`,bean.variety&&`Variety: ${bean.variety}`,
+    bean.process&&`Process: ${bean.process}`,bean.altitude&&`Altitude: ${bean.altitude} masl`,
+    bean.flavorNotes&&`Flavor notes: ${bean.flavorNotes}`,bean.roaster&&`Roaster: ${bean.roaster}`,
+    bean.roastDate&&`Roast date: ${bean.roastDate}`].filter(Boolean).join('\n')+freezeCtx;
+
+  const bDesc2=brewer==='both'?'Generate recipes for BOTH Paul\'s V60 (400ml) AND Heather\'s Hario Switch (500ml full immersion).'
+    :brewer==='v60'?'Generate a starting recipe for Paul\'s V60 (400ml).'
+    :'Generate a starting recipe for Heather\'s Hario Switch (500ml, full immersion).';
+
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,system:SYSTEM,
+        messages:[{role:'user',content:`${bDesc}\n\nGrinder: ${grinder}\n${bDesc2}${dialedCtx}`}]})
+    });
+    const data=await res.json();
+    if(data.error)throw new Error(data.error.message);
+    lastRecipe=data.content.map(c=>c.text||'').join('');
+
+    let html=`<div class="rbox"><h3>${bean.name}</h3>${md(lastRecipe)}</div>`;
+    // Add stopwatch for V60 recipes
+    if(brewer==='v60'||brewer==='both'){
+      html+=buildStopwatch(lastRecipe);
+    }
+    document.getElementById('recipeOut').innerHTML=html;
+    document.getElementById('saveRow').style.display='block';
+    await saveBean(bean);
+  }catch(e){
+    document.getElementById('recipeOut').innerHTML=`<div class="alert err">Error: ${e.message||'Check Setup.'}</div>`;
+  }
+  btn.disabled=false;
+}
+
+function md(t){
+  return t.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g,'<em>$1</em>')
+    .replace(/^#{1,3} (.+)$/gm,'<span class="rbox-section">$1</span>')
+    .replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>');
+}
+
+async function saveBean(bean){
+  if(sb){
+    const{error}=await sb.from('beans').upsert({
+      name:bean.name,origin:bean.origin,region:bean.region,variety:bean.variety,
+      process:bean.process,roaster:bean.roaster,roast_date:bean.roastDate,
+      altitude:bean.altitude,flavor_notes:bean.flavorNotes,price:bean.price,
+      world:bean.world,frozen:bean.frozen,
+      freeze_date:bean.freezeDate||null,thaw_date:bean.thawDate||null
+    },{onConflict:'name'});
+    if(error){console.error('Supabase saveBean error:',error);throw new Error(error.message);}
+  }else{
+    let beans=JSON.parse(localStorage.getItem('brew_beans')||'[]');
+    const i=beans.findIndex(b=>b.name.toLowerCase()===bean.name.toLowerCase());
+    if(i>=0)beans[i]={...beans[i],...bean};else beans.unshift(bean);
+    localStorage.setItem('brew_beans',JSON.stringify(beans));
+  }
+}
+
+async function saveBeanOnly(){
+  const bean=getForm();
+  if(!bean.name){alert('Please enter a bean name.');return}
+  try{await saveBean(bean);document.getElementById('recipeOut').innerHTML='<div class="alert ok">✓ Bean saved to library.</div>';}
+  catch(e){document.getElementById('recipeOut').innerHTML=`<div class="alert err">Save failed: ${e.message}</div>`;}
+}
+
+async function saveDialedIn(){
+  if(!lastRecipe||!lastBean.name)return;
+  const entry={bean_name:lastBean.name,brewer,grinder,recipe_text:lastRecipe};
+  try{
+    if(sb){await sb.from('recipes').upsert(entry,{onConflict:'bean_name,brewer,grinder'});}
+    else{
+      let r=JSON.parse(localStorage.getItem('brew_recipes')||'[]');
+      const k=`${entry.bean_name}_${entry.brewer}_${entry.grinder}`;
+      const i=r.findIndex(x=>`${x.bean_name||x.beanName}_${x.brewer}_${x.grinder}`===k);
+      if(i>=0)r[i]=entry;else r.unshift(entry);
+      localStorage.setItem('brew_recipes',JSON.stringify(r));
+    }
+    document.getElementById('saveRow').innerHTML='<div class="alert ok" style="margin-top:0.75rem">✓ Saved as dialed-in!</div>';
+  }catch(e){alert('Save error: '+e.message)}
+}
+
+// ── LIBRARY ─────────────────────────────────────────────
+async function renderLibrary(){
+  const el=document.getElementById('beanList');
+  el.innerHTML='<div class="loading"><div class="spin"></div> Loading...</div>';
+  try{
+    let beans=[];
+    if(sb){const{data,error}=await sb.from('beans').select('*').order('created_at',{ascending:false});if(error)throw error;beans=data||[];}
+    else beans=JSON.parse(localStorage.getItem('brew_beans')||'[]');
+    if(!beans.length){el.innerHTML='<div class="empty"><h3>No beans yet</h3><p>Add your first bean on the Add Bean tab.</p></div>';return}
+
+    el.innerHTML=beans.map((b,i)=>{
+      const w=b.world;
+      const wbadge=w?`<span class="world-badge ${w==='old'?'old-w':'new-w'}">${w==='old'?'Old World':'New World'}</span>`:'';
+      const fbadge=b.frozen?`<span class="frozen-badge">❄ Frozen</span>`:'';
+
+      // Build detail rows
+      const roastAge=b.roast_date?calcRoastAge(b.roast_date,b.frozen,b.freeze_date,b.thaw_date):'';
+      const details=[
+        {l:'Variety',v:b.variety},{l:'Process',v:b.process},{l:'Region',v:b.region},
+        {l:'Altitude',v:b.altitude?(b.altitude+' masl'):''},
+        {l:'Roaster',v:b.roaster},{l:'Roast date',v:b.roast_date||b.roastDate},
+        {l:'Age',v:roastAge},{l:'Price',v:b.price},
+        b.frozen&&{l:'Freeze info',v:buildFreezeStr(b)},
+      ].filter(Boolean).filter(x=>x.v);
+
+      const detailHtml=details.map(d=>`<div class="detail-row"><span class="detail-lbl">${d.l}</span><span class="detail-val">${d.v}</span></div>`).join('');
+      const fullFlavor=(b.flavor_notes||b.flavorNotes)||'';
+
+      return`<div class="card" id="card-${i}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div>
+            <h3 onclick="toggleDetail(${i})">${b.name}<span class="expand-hint">tap to expand</span></h3>
+            <div class="meta">${[b.origin,b.process].filter(Boolean).join(' · ')}${b.roaster?' · '+b.roaster:''}</div>
+          </div>
+          <div style="display:flex;gap:0.3rem;flex-wrap:wrap;justify-content:flex-end">${wbadge}${fbadge}</div>
+        </div>
+        ${fullFlavor?`<div class="flavor">${fullFlavor}</div>`:''}
+        <div class="card-detail" id="detail-${i}">
+          <div class="detail-grid">${detailHtml}</div>
+        </div>
+        <div class="cacts">
+          <button class="cbtn primary" onclick='loadBean(${JSON.stringify(b).replace(/'/g,"&#39;")})'>Get recipe</button>
+          <button class="cbtn" onclick='deleteBean("${b.id||i}",${!b.id})'>Delete</button>
+        </div>
+      </div>`;
+    }).join('');
+  }catch(e){el.innerHTML=`<div class="alert err">${e.message}</div>`}
+}
+
+function toggleDetail(i){
+  const el=document.getElementById('detail-'+i);
+  if(el)el.classList.toggle('open');
+  const hint=document.querySelector(`#card-${i} .expand-hint`);
+  if(hint)hint.textContent=el.classList.contains('open')?'tap to close':'tap to expand';
+}
+
+function calcRoastAge(roastDateStr,frozen,freezeDateStr,thawDateStr){
+  if(!roastDateStr)return'';
+  const roast=new Date(roastDateStr);const today=new Date();
+  const calDays=Math.floor((today-roast)/(1000*60*60*24));
+  if(calDays<0)return'';
+  let daysFrozen=0;
+  if(frozen&&freezeDateStr){const fd=new Date(freezeDateStr);const td=thawDateStr?new Date(thawDateStr):today;daysFrozen=Math.max(0,Math.floor((td-fd)/(1000*60*60*24)));}
+  const eff=Math.max(0,calDays-daysFrozen);
+  let status='';
+  if(eff<7)status=' — Too fresh';
+  else if(eff<=30)status=' — Peak window';
+  else if(eff<=45)status=' — Drink soon';
+  else status=' — Past peak';
+  return eff+'d effective'+status;
+}
+
+function buildFreezeStr(b){
+  if(!b.frozen)return'';
+  let s='Frozen';
+  if(b.freeze_date||b.freezeDate)s+=' '+( b.freeze_date||b.freezeDate);
+  if(b.thaw_date||b.thawDate)s+=', thawed '+(b.thaw_date||b.thawDate);
+  return s;
+}
+
+function loadBean(b){
+  frozenOn=false;
+  document.getElementById('freezeCheck').className='freeze-check';
+  document.getElementById('freezeLbl').className='freeze-lbl';
+  document.getElementById('freezeDates').style.display='none';
+  document.getElementById('freezeNote').style.display='none';
+  const s=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v||''};
+  s('fn',b.name);s('fo',b.origin);s('freg',b.region);s('fv',b.variety);
+  s('fro',b.roaster);s('frd',b.roast_date||b.roastDate);s('fa',b.altitude);
+  s('ffl',b.flavor_notes||b.flavorNotes);
+  if(b.process){const sel=document.getElementById('fp');[...sel.options].forEach(o=>{if(o.value===b.process)sel.value=o.value})}
+  if(b.world)setWorld(b.world);
+  if(b.frozen){
+    frozenOn=true;
+    document.getElementById('freezeCheck').className='freeze-check on';
+    document.getElementById('freezeLbl').className='freeze-lbl on';
+    document.getElementById('freezeDates').style.display='block';
+    s('fFreezeDate',b.freeze_date||b.freezeDate);
+    s('fThawDate',b.thaw_date||b.thawDate);
+  }
+  if(b.roast_date||b.roastDate)updateRoastAge();
+  if(b.price){
+    const m=b.price.match(/^([\d.]+)\s+per\s+([\d.]+)?\s*(oz|lb|g|kg)/);
+    if(m){document.getElementById('fPrice').value=m[1];if(m[2])document.getElementById('fQty').value=m[2];const sel=document.getElementById('fUnit');[...sel.options].forEach(o=>{if(o.value===m[3])sel.value=o.value});calcCost();}
+  }
+  if(b.origin)autoWorld(b.origin);
+  switchTab('add',document.querySelectorAll('.tab')[0]);
+}
+
+async function deleteBean(id,isLocal){
+  if(!confirm('Delete this bean?'))return;
+  try{
+    if(sb&&!isLocal)await sb.from('beans').delete().eq('id',id);
+    else{let b=JSON.parse(localStorage.getItem('brew_beans')||'[]');b.splice(parseInt(id),1);localStorage.setItem('brew_beans',JSON.stringify(b));}
+    renderLibrary();
+  }catch(e){alert('Delete error')}
+}
+
+async function renderRecipes(){
+  const el=document.getElementById('recipeList');
+  el.innerHTML='<div class="loading"><div class="spin"></div> Loading...</div>';
+  try{
+    let recipes=[];
+    if(sb){const{data,error}=await sb.from('recipes').select('*').order('created_at',{ascending:false});if(error)throw error;recipes=data||[];}
+    else recipes=JSON.parse(localStorage.getItem('brew_recipes')||'[]');
+    if(!recipes.length){el.innerHTML='<div class="empty"><h3>No dialed-in recipes yet</h3><p>Generate and approve a recipe to save it here.</p></div>';return}
+    const bl=b=>b==='v60'?'V60 · Paul':b==='switch'?'Switch · Heather':'V60 + Switch';
+    el.innerHTML=recipes.map((r,i)=>`
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.22rem">
+          <h3>${r.bean_name||r.beanName}</h3>
+          <span class="dialed-badge">Dialed in</span>
+        </div>
+        <div class="meta">${bl(r.brewer)} · ${r.grinder}</div>
+        <div class="rbox" style="margin-top:0.5rem;font-size:0.8rem">${md(r.recipe_text||r.recipe||'')}</div>
+        ${(r.brewer==='v60'||r.brewer==='both')?buildStopwatch(r.recipe_text||r.recipe||''):''}
+        <div class="cacts" style="margin-top:0.5rem">
+          <button class="cbtn" onclick='deleteRecipe("${r.id||i}",${!r.id})'>Delete</button>
+        </div>
+      </div>`).join('');
+  }catch(e){el.innerHTML=`<div class="alert err">${e.message}</div>`}
+}
+
+async function deleteRecipe(id,isLocal){
+  if(!confirm('Delete this recipe?'))return;
+  try{
+    if(sb&&!isLocal)await sb.from('recipes').delete().eq('id',id);
+    else{let r=JSON.parse(localStorage.getItem('brew_recipes')||'[]');r.splice(parseInt(id),1);localStorage.setItem('brew_recipes',JSON.stringify(r));}
+    renderRecipes();
+  }catch(e){alert('Delete error')}
+}
+
+window.addEventListener('DOMContentLoaded',()=>{
+  initSB();
+  if(!getKey('anthropic_key')||!getKey('sb_url'))openSettings();
+});
+</script>
+</body>
+</html>
